@@ -1,8 +1,7 @@
-// search.js - Deno Deploy Proxy for PCGamer Guide Search
-
-// Environment variables:
-// GOOGLE_API_KEY = Your Google Custom Search API key
-// SEARCH_ENGINE_ID = Your CSE ID
+/**
+ * PCGamer Guide Proxy for G-Assist
+ * Fully compatible with Deno Deploy
+ */
 
 export const handler = async (request) => {
   try {
@@ -23,8 +22,9 @@ export const handler = async (request) => {
     const SEARCH_ENGINE_ID = Deno.env.get("SEARCH_ENGINE_ID");
 
     if (!API_KEY || !SEARCH_ENGINE_ID) {
+      console.error("Missing environment variables!");
       return new Response(
-        JSON.stringify({ error: "Server config missing: GOOGLE_API_KEY or SEARCH_ENGINE_ID" }),
+        JSON.stringify({ error: "Server config missing" }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -35,13 +35,13 @@ export const handler = async (request) => {
     url.searchParams.append("cx", SEARCH_ENGINE_ID);
     url.searchParams.append("q", query);
 
-    console.log("🔍 Searching Google CSE:", url.toString());
+    console.log("🔍 Fetching from Google CSE:", url.toString());
 
     const response = await fetch(url);
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Google API error:", response.status, errText);
+      console.error("Google API error:", errText);
       return new Response(
         JSON.stringify({ error: "Search API failed", details: errText }),
         { status: response.status }
@@ -52,7 +52,7 @@ export const handler = async (request) => {
 
     if (!data.items || data.items.length === 0) {
       return new Response(
-        JSON.stringify({ results: [], message: "No guides found for this game." }),
+        JSON.stringify({ results: [], message: "No guides found" }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -69,13 +69,20 @@ export const handler = async (request) => {
   } catch (err) {
     console.error("Unexpected error:", err);
     return new Response(
-      JSON.stringify({ error: "Internal server error", details: err.message }),
+      JSON.stringify({ error: "Internal error", details: err.message }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 };
 
-// Handle incoming requests
+// 🔥 THIS LINE IS CRITICAL FOR DENO DEPLOY:
 addEventListener("fetch", (event) => {
-  event.respondWith(handler(event.request));
+  event.respondWith(async () => {
+    try {
+      return await handler(event.request);
+    } catch (err) {
+      console.error("Unhandled error:", err);
+      return new Response("Internal Server Error", { status: 500 });
+    }
+  });
 });
