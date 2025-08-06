@@ -32,7 +32,7 @@ export const handler = async (request) => {
     const url = new URL("https://www.googleapis.com/customsearch/v1");
     url.searchParams.append("key", API_KEY);
     url.searchParams.append("cx", SEARCH_ENGINE_ID);
-    url.searchParams.append("q", `${game} site:pcgamer.com`);
+    url.searchParams.append("q", `site:pcgamer.com "${game}" (guide OR guides OR walkthrough OR tips OR how to)`);
 
     const response = await fetch(url);
 
